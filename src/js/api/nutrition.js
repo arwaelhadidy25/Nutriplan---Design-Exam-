@@ -1,8 +1,17 @@
 export async function loadMealNutrition(meal) {
+  // false data
+  if (!meal || !meal.ingredients) {
+    return {
+      success: false,
+      message: "Invalid meal data"
+    };
+  }
+
   const ingredients = meal.ingredients.map(
     item => `${item.measure} ${item.ingredient}`
   );
 
+  // api post data and get
   const response = await fetch(
     "https://nutriplan-api.vercel.app/api/nutrition/analyze",
     {
@@ -17,9 +26,7 @@ export async function loadMealNutrition(meal) {
 
   const data = await response.json();
 
-  if (!data.success) {
-    throw new Error("Nutrition analysis failed");
-  }
-  console.log(data.data.perServing)
-  return data.data.perServing;
+  if (!data.success) return null;
+
+  return data.data;
 }

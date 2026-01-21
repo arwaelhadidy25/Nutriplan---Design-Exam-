@@ -1,43 +1,45 @@
 "use strict"
+import {showLoading , hideLoading} from "./navigation.js"
 import { MealDB } from "./api/mealdb.js";
 import { renderCategories } from "./ui/components.js";
 import { renderMeals } from "./ui/components.js";
 import { renderAreas } from "./ui/components.js";
 import { showMealsLoading } from "./ui/components.js";
 import { renderMealDetails } from "./ui/components.js";
-import { addToFoodLog, getFoodLog } from "./state/appState.js";
+import {getFoodLog,addToFoodLog } from "./state/appState.js";
 import {renderFoodLog} from "./ui/components.js"
 import { clearFoodLog } from "./state/appState.js";
 import { removeFromFoodLog } from "./state/appState.js";
-import {loadMealNutrition} from "./api/nutrition.js";
 import { showSection } from "./navigation.js";
-import { renderWeeklyOverview } from "./ui/components.js";
-let currentMeal ="";
-// loading
-function showLoading() {
-  document.getElementById("app-loading-overlay").style.display = "flex";
-}
+import { ProductsAPI } from "./api/product.js";
+import { renderProducts, openProductModal } from "./ui/productsUI.js";
+import { loadMealNutrition } from "./api/nutrition.js"
+import { openServingsModal,closeServingsModal,fillServingsModal } from "./ui/components.js";
 
-function hideLoading() {
-  document.getElementById("app-loading-overlay").style.display = "none";
-}
 const searchInput = document.getElementById("search-input");
+let currentMeal ="";
+let currentMealNutrition = null;
+let selectedServings=1;
+let currentProduct=""
 const api = new MealDB();
-showLoading();
+// loading
+async function initHome() {
+  showLoading();
 
-// get meals
-const meals = await api.getRandomMeals();
-renderMeals(meals);
+  const meals = await api.getRandomMeals();
+  renderMeals(meals);
 
-// get categories
-const categories = await api.getCategories();
-renderCategories(categories);
+  const categories = await api.getCategories();
+  renderCategories(categories);
 
-// get areas
-const areas = await api.getAreas();
-renderAreas(areas);
+  const areas = await api.getAreas();
+  renderAreas(areas);
 
-hideLoading();
+  hideLoading();
+}
+
+initHome();
+
  //search meal
   searchInput.addEventListener("input", async function () {
     showMealsLoading();
@@ -105,43 +107,12 @@ document.getElementById("recipes-grid").addEventListener("click", async function
     
  showSection("meal-details")
   });
-
-  //back to meals
-document.getElementById("meal-details").addEventListener("click", function (e) {
-
-    if (e.target.closest("#back-to-meals-btn")) {
-showSection("home")
-    }
-  });
-
-document.getElementById("home").addEventListener("click", function (e) {
-showSection("home")
-
-  });
-  document.getElementById("product-show").addEventListener("click", function (e) {
-showSection("products-section")
-
-  });
-
-
-  //---------- food log
-
-
-
-document.addEventListener("click", async function (e) {
-  if (!e.target.closest("#log-meal-btn")) return;
-    openServingsModal();
-    
-    
-});
-
 // food log show
-document.getElementById("foodlog-section").addEventListener("click", function () {
+document.getElementById("foodlog-show").addEventListener("click", () => {
   showSection("foodlog-section");
   renderFoodLog(getFoodLog());
-  renderWeeklyOverview()
 });
-//clear food log
+//clear all food log
 document.getElementById("clear-foodlog").addEventListener("click", function () {
   clearFoodLog();
   renderFoodLog([]);
@@ -149,7 +120,6 @@ document.getElementById("clear-foodlog").addEventListener("click", function () {
     document.getElementById("foodlog-show").addEventListener("click", function (e) {
 showSection("foodlog-section")
 renderFoodLog(getFoodLog());
-renderWeeklyOverview()
 
   });
 
@@ -160,63 +130,161 @@ document.addEventListener("click", function (e) {
     removeFromFoodLog(id);
     renderFoodLog();
   }})
-//////model serving
-let selectedServings = 1;
+//products
 
-const modal = document.getElementById("servings-modal");
-const servingsCount = document.getElementById("servings-count");
+const apiProduct = new ProductsAPI();
+const barcodeInput = document.getElementById("barcode-input");
+const barcodeBtn = document.getElementById("lookup-barcode-btn");
+const categories = document.getElementById("product-categories");
+const searchProductInput =document.getElementById("product-search-input")
+const searchProductBtn=document.getElementById("search-product-btn")
 
-function openServingsModal() {
+let allProducts = [];
+let filteredProducts =[];
+const nutriScoreSection = document.querySelector(".nutri-score");
+//display by category
+categories.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".product-category-btn");
+  if (!btn) return;
+
+  const category = btn.textContent;
+  allProducts = await apiProduct.getByCategory(category);
+  filteredProducts = allProducts;
+
+  renderProducts(filteredProducts);});
+  //nutri score search
+nutriScoreSection.addEventListener("click", (e) => {
+  const btn = e.target.closest(".nutri-score-filter");
+  if (!btn) return;
+
+  const grade = btn.dataset.grade
+
+  if (!grade || grade==="All") {
+    filteredProducts = allProducts;
+    console.log(filteredProducts)
+  } else {
+    filteredProducts = allProducts.filter(
+      p => p.nutritionGrade === grade
+    );
+  }
+
+  renderProducts(filteredProducts);
+});
+// barcode search
+barcodeBtn.addEventListener("click", async () => {
+  const code = barcodeInput.value.trim();
+  if (!code) return;
+
+  const product = await apiProduct.getByBarcode(code);
+  renderProducts(product ? [product] : []);
+});
+
+// name search
+searchProductBtn.addEventListener("click", async () => {
+  const code = searchProductInput.value.trim();
+  if (!code) return;
+  const product = await apiProduct.getByName(code);
+  renderProducts(product);
+});
+
+
+document.getElementById("products-grid").addEventListener("click", e => {
+  const card = e.target.closest(".product-card");
+  if (!card) return;
+
+  const barcode = card.dataset.barcode;
+  const product = filteredProducts.find(p => p.barcode === barcode);
+
+  if (product) {
+    openProductModal(product);
+  }
+});
+
+//////////////add meal to log food
+
+//meal button action
+document.addEventListener("click", async (e) => {
+  if (!e.target.closest("#log-meal-btn")) return;
+  console.log(currentMeal);
+  const nutrition = await loadMealNutrition(currentMeal);
+  currentMealNutrition = nutrition.perServing;
   selectedServings = 1;
-  servingsCount.textContent = selectedServings;
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-}
+  document.getElementById("servings-count").textContent = "1";
+  await fillServingsModal(currentMeal, nutrition);
+  openServingsModal();
+});
 
-function closeServingsModal() {
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
-}
-
+//serving counter
 document.getElementById("plus-serving").addEventListener("click", () => {
-  selectedServings++;
-  servingsCount.textContent = selectedServings;
+  selectedServings=selectedServings+0.5;
+  document.getElementById("servings-count").textContent = selectedServings;
 });
 
 document.getElementById("minus-serving").addEventListener("click", () => {
   if (selectedServings > 1) {
-    selectedServings--;
-    servingsCount.textContent = selectedServings;
+    selectedServings=selectedServings-0.5;
+    document.getElementById("servings-count").textContent = selectedServings;
   }
 });
-
-document.getElementById("close-serving").addEventListener("click", closeServingsModal);
-document.getElementById("confirm-serving").addEventListener("click", async () => {
-  const nutrition = await loadMealNutrition(currentMeal);
+document.getElementById("confirm-serving").addEventListener("click", () => {
+  if (!currentMeal || !currentMealNutrition) return;
 
   const logItem = {
     id: currentMeal.id + "-" + Date.now(),
     name: currentMeal.name,
     image: currentMeal.thumbnail,
-    servings: selectedServings,
     type: "meal",
+    servings: selectedServings,
+
     time: new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit"
     }),
     date: new Date().toISOString().split("T")[0],
 
-    calories: nutrition.calories * selectedServings,
-    protein: nutrition.protein * selectedServings,
-    carbs: nutrition.carbs * selectedServings,
-    fat: nutrition.fat * selectedServings,
-    fiber: nutrition.fiber * selectedServings
+    calories: currentMealNutrition.calories * selectedServings,
+    protein:  currentMealNutrition.protein  * selectedServings,
+    carbs:    currentMealNutrition.carbs    * selectedServings,
+    fat:      currentMealNutrition.fat      * selectedServings,
+    fiber:    currentMealNutrition.fiber    * selectedServings
   };
 
   addToFoodLog(logItem);
-renderWeeklyOverview();
-closeServingsModal();
-
+  closeServingsModal();
 });
+//////////////add meal to log food
+function addProductToFoodLog(product) {
+  const logItem = {
+    id: `product-${product.barcode}-${Date.now()}`,
+    type: "product",
+
+    name: product.name,
+    image: product.image,
+    servings: 1,
+
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    }),
+    date: new Date().toISOString().split("T")[0],
+
+    calories: product.nutrients.calories,
+    protein: product.nutrients.protein,
+    carbs: product.nutrients.carbs,
+    fat: product.nutrients.fat,
+    sugar: product.nutrients.sugar,
+    fiber: product.nutrients.fiber,
+    sodium: product.nutrients.sodium
+  };
+
+  addToFoodLog(logItem);
+}
 
 
+document.getElementById("products-grid").addEventListener("click",  async function (e) {
+  const card = e.target.closest(".product-card");
+  const barcode = card.dataset.barcode;
+  const product = await apiProduct.getByBarcode(barcode);
+  currentProduct =product;
+  addProductToFoodLog(product);
+});

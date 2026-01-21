@@ -15,8 +15,8 @@ export function addToFoodLog(item) {
 
 // clear item
 export function removeFromFoodLog(id) {
-  const log = getFoodLog().filter(item => item.id !== id);
-  localStorage.setItem(logKey, JSON.stringify(log));
+  const updatedLog = getFoodLog().filter(item => item.id !== id);
+  localStorage.setItem(logKey, JSON.stringify(updatedLog));
 }
 
 // clear all

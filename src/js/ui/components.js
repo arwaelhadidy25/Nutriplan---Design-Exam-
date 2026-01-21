@@ -1,10 +1,10 @@
-"use strict"
+"use strict";
 // ----------------- Meals
-import { getFoodLog, removeFromFoodLog, clearFoodLog } from "../state/appState.js";
+import { getFoodLog} from "../state/appState.js";
 import { loadMealNutrition } from "../api/nutrition.js";
 export function renderCategories(categories) {
   let cartona = "";
-  
+
   for (let i = 0; i < 12; i++) {
     cartona += `
       <div
@@ -21,17 +21,15 @@ export function renderCategories(categories) {
                   <h3 class="text-sm font-bold text-gray-900">${categories[i].name}</h3>
                 </div>
               </div>
-            </div>`
-
+            </div>`;
   }
-      document.getElementById("categories-grid").innerHTML = cartona;
-
+  document.getElementById("categories-grid").innerHTML = cartona;
 }
-    
-export function renderMeals(meals){
-    //no recipes found
-    let cartona="";
-    if (!meals || meals.length === 0) {
+
+export function renderMeals(meals) {
+  //no recipes found
+  let cartona = "";
+  if (!meals || meals.length === 0) {
     cartona = `
     
       <div class="flex flex-col items-center justify-center py-12 text-center col-span-full">
@@ -43,12 +41,12 @@ export function renderMeals(meals){
       </div>
     `;
     document.getElementById("recipes-grid").innerHTML = cartona;
-    document.getElementById("recipes-grid").classList.remove("grid-cols-4")
-    document.getElementById("recipes-grid").classList.add("grid-cols-12")
+    document.getElementById("recipes-grid").classList.remove("grid-cols-4");
+    document.getElementById("recipes-grid").classList.add("grid-cols-12");
     return;
   }
   for (let i = 0; i < meals.length; i++) {
-     cartona += `
+    cartona += `
       <div
               class="recipe-card bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer group"
               data-meal-id="${meals[i].id}"
@@ -95,11 +93,10 @@ export function renderMeals(meals){
               </div>
             </div>
     `;
-    
-}
-    document.getElementById("recipes-grid").classList.add("grid-cols-4")
-    document.getElementById("recipes-grid").classList.remove("grid-cols-12")
-document.getElementById("recipes-grid").innerHTML = cartona;
+  }
+  document.getElementById("recipes-grid").classList.add("grid-cols-4");
+  document.getElementById("recipes-grid").classList.remove("grid-cols-12");
+  document.getElementById("recipes-grid").innerHTML = cartona;
 }
 export function renderAreas(areas) {
   let cartona = "";
@@ -108,15 +105,13 @@ export function renderAreas(areas) {
               class="area-card px-4 py-2 bg-gray-100 text-gray-700 rounded-full font-medium text-sm whitespace-nowrap hover:bg-gray-200 transition-all"
             >
               ${areas[i].name}
-            </button>`
-
+            </button>`;
   }
-      document.getElementById("areas-grid").innerHTML += cartona;
-
+  document.getElementById("areas-grid").innerHTML += cartona;
 }
 export function showMealsLoading() {
-    document.getElementById("recipes-grid").classList.remove("grid-cols-4")
-    document.getElementById("recipes-grid").classList.add("grid-cols-12")
+  document.getElementById("recipes-grid").classList.remove("grid-cols-4");
+  document.getElementById("recipes-grid").classList.add("grid-cols-12");
   document.getElementById("recipes-grid").innerHTML = `
     <div class="flex items-center justify-center py-12">
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
@@ -125,9 +120,9 @@ export function showMealsLoading() {
 }
 // Details
 export async function renderMealDetails(meal) {
-  let cartona="";
+  let cartona = "";
 
-  cartona=` <div class="max-w-7xl mx-auto">
+  cartona = ` <div class="max-w-7xl mx-auto">
           <!-- Back Button -->
           <button
             id="back-to-meals-btn"
@@ -173,7 +168,7 @@ export async function renderMealDetails(meal) {
                   </span>
                   <span class="flex items-center gap-2">
                     <i class="fa-solid fa-utensils"></i>
-                    <span id="hero-servings">4 servings</span>
+                    <span id="hero-servings">4</span>servings
                   </span>
                   <span class="flex items-center gap-2">
                     <i class="fa-solid fa-fire"></i>
@@ -279,14 +274,16 @@ export async function renderMealDetails(meal) {
                 </h2>
                 <div id="nutrition-facts-container">
      
-                  ${ await renderNutritionContainer()}
+                  ${renderNutritionContainer()}
                 </div>
               </div>
             </div>
           </div>
-        </div>`
-  document.getElementById("meal-details").innerHTML=cartona;
-  await renderNutritionFacts( await loadMealNutrition(meal));
+        </div>`;
+  document.getElementById("meal-details").innerHTML = cartona;
+    const nutrition = await loadMealNutrition(meal);
+    if (!nutrition) return;
+renderNutritionFacts(nutrition.perServing);
 }
 function renderInstructions(instructions) {
   let cartona = "";
@@ -302,7 +299,6 @@ function renderInstructions(instructions) {
         </p>
       </div>
     `;
-  
   }
 
   return cartona;
@@ -331,64 +327,11 @@ function renderIngredients(ingredients) {
   return cartona;
 }
 function getYoutubeEmbedUrl(youtubeUrl) {
-    //=v هنا هقسم الكود اللي جاي نصين قبل 
-    //  وبعدها وهاخد الجزء التاني فقط
+  //=v هنا هقسم الكود اللي جاي نصين قبل
+  //  وبعدها وهاخد الجزء التاني فقط
   const videoId = youtubeUrl.split("v=")[1];
   return `https://www.youtube.com/embed/${videoId}`;
 }
-
-
-// ----------------- food log
-export function renderFoodLog() {
-  const list = document.getElementById("logged-items-list");
-  const items = getFoodLog();
-
-  // counter
-  document.querySelector("h4").textContent = `Logged Items (${items.length})`;
-  if (items.length === 0) {
-    list.innerHTML = `
-      <div class="text-center py-8 text-gray-500">
-        <i class="fa-solid fa-utensils text-4xl mb-3 text-gray-300"></i>
-        <p class="font-medium">No meals logged today</p>
-      </div>
-    `;
-    return;
-  }
-
-  let cartona = "";
-
-  for (let i = 0; i < items.length; i++) {
-    cartona += `
-      <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4">
-        <div class="flex items-center gap-4">
-          <img src="${items[i].image}" class="w-14 h-14 rounded-lg object-cover"/>
-          <div>
-            <p class="font-semibold">${items[i].name}</p>
-            <p class="text-xs text-gray-500">
-              ${items[i].servings} serving • ${items[i].type} <br/>
-              ${items[i].time}
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4 text-sm">
-          <span class="font-bold text-emerald-600">${items[i].calories} kcal</span>
-          <span>${items[i].protein}g P</span>
-          <span>${items[i].carbs}g C</span>
-          <span>${items[i].fat}g F</span>
-          <button data-id="${items[i].id}" class="delete-log text-red-500">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  list.innerHTML = cartona;
-  getFoodLog()
-}
-
-
 
 
 // --------------Nutrition
@@ -396,12 +339,9 @@ export function renderFoodLog() {
 //render data from api nutrition
 //load data from api
 
-
-async function  renderNutritionContainer(){
-    
-
-    let cartona=""
-    cartona=`<p class="text-sm text-gray-500 mb-4">Per serving</p>
+ function renderNutritionContainer() {
+  let cartona = "";
+  cartona = `<p class="text-sm text-gray-500 mb-4">Per serving</p>
 
                   <div
                     class="text-center py-4 mb-4 bg-linear-to-br from-emerald-50 to-teal-50 rounded-xl"
@@ -520,123 +460,127 @@ async function  renderNutritionContainer(){
                         class="bg-blue-500 h-2 rounded-full"
                       ></div>
                     </div>
-                  </div>`
-        return cartona;
-        
+                  </div> `;
+  return cartona;
+  
 }
 
 function calcPercentage(value, max) {
   return Math.min(Math.round((value / max) * 100), 100);
 }
 
+function renderNutritionFacts(nutrition) {
+  const proteinPct = calcPercentage(nutrition.protein, 60);
+  const carbsPct = calcPercentage(nutrition.carbs, 275);
+  const fatPct = calcPercentage(nutrition.fat, 70);
+  const sugarPct = calcPercentage(nutrition.sugar, 50);
+  const saturatedFatPct = calcPercentage(nutrition.saturatedFat, 20);
+  const cholesterolPct = calcPercentage(nutrition.cholesterol, 300);
+  const sodiumPct = calcPercentage(nutrition.sodium, 2300);
+  const fiberPct = calcPercentage(nutrition.fiber, 25);
 
- function renderNutritionFacts(nutrition) {
-  const proteinPct  = calcPercentage(nutrition.protein, 60);
-  const carbsPct    = calcPercentage(nutrition.carbs, 275);
-  const fatPct      = calcPercentage(nutrition.fat, 70);
-  const sugarPct      = calcPercentage(nutrition.sugar, 50);
-  const saturatedFatPct      = calcPercentage(nutrition.saturatedFat, 20);
-  const cholesterolPct      = calcPercentage(nutrition.cholesterol, 300);
-  const sodiumPct      = calcPercentage(nutrition.sodium, 2300);
-  const fiberPct      = calcPercentage(nutrition.fiber, 25);
-
-
-  document.getElementById("nutrition-calories").textContent =nutrition.calories;
-
-  document.getElementById("nutrition-protein").textContent =nutrition.protein;
-
-  document.getElementById("nutrition-carbs").textContent =nutrition.carbs;
-
-  document.getElementById("nutrition-fat").textContent =nutrition.fat;
-   document.getElementById("nutrition-sugar").textContent =nutrition.sugar;
-    document.getElementById("nutrition-saturatedFat").textContent =nutrition.saturatedFat;
-     document.getElementById("nutrition-cholesterol").textContent =nutrition.cholesterol;
-      document.getElementById("nutrition-sodium").textContent =nutrition.sodium;
-      document.getElementById("nutrition-fiber").textContent =nutrition.fiber;
+  document.getElementById("nutrition-calories").textContent = nutrition.calories;
+  document.getElementById("nutrition-protein").textContent = nutrition.protein;
+  document.getElementById("nutrition-carbs").textContent = nutrition.carbs;
+  document.getElementById("nutrition-fat").textContent = nutrition.fat;
+  document.getElementById("nutrition-sugar").textContent = nutrition.sugar;
+  document.getElementById("nutrition-saturatedFat").textContent =nutrition.saturatedFat;
+  document.getElementById("nutrition-cholesterol").textContent =nutrition.cholesterol;
+  document.getElementById("nutrition-sodium").textContent = nutrition.sodium;
+  document.getElementById("nutrition-fiber").textContent = nutrition.fiber;
 
   document.getElementById("protein-bar").style.width = `${proteinPct}%`;
   document.getElementById("carbs-bar").style.width = `${carbsPct}%`;
   document.getElementById("fat-bar").style.width = `${fatPct}%`;
-    document.getElementById("sugar-bar").style.width = `${sugarPct}%`;
-      document.getElementById("saturatedFat-bar").style.width = `${saturatedFatPct}%`;
-        document.getElementById("cholesterol-bar").style.width = `${cholesterolPct}%`;
-          document.getElementById("sodium-bar").style.width = `${sodiumPct}%`;
-    document.getElementById("fiber-bar").style.width = `${fiberPct}%`;
+  document.getElementById("sugar-bar").style.width = `${sugarPct}%`;
+  document.getElementById("saturatedFat-bar").style.width =`${saturatedFatPct}%`;
+  document.getElementById("cholesterol-bar").style.width = `${cholesterolPct}%`;
+  document.getElementById("sodium-bar").style.width = `${sodiumPct}%`;
+  document.getElementById("fiber-bar").style.width = `${fiberPct}%`;
 }
-// food log get date
-function getCurrentWeek() {
-  const today = new Date();
-  const week = [];
+// ----------------- food log
+export function renderFoodLog() {
+  const list = document.getElementById("logged-items-list");
+  const items = getFoodLog();
 
-  const start = new Date(today);
-  start.setDate(today.getDate() - today.getDay() + 1); // Monday
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-
-    week.push({
-      label: d.toLocaleDateString("en-US", { weekday: "short" }),
-      date: d.toISOString().split("T")[0],
-      day: d.getDate()
-    });
+  // counter
+  document.querySelector("h4").textContent = `Logged Items (${items.length})`;
+  if (items.length === 0) {
+    list.innerHTML = `
+      <div class="text-center py-8 text-gray-500">
+        <i class="fa-solid fa-utensils text-4xl mb-3 text-gray-300"></i>
+        <p class="font-medium">No meals logged today</p>
+      </div>
+    `;
+    return;
   }
 
-  return week;
-}
-// calculate all calories
+  let cartona = "";
 
+  for (let i = 0; i < items.length; i++) {
+    cartona += `
+      <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4">
+        <div class="flex items-center gap-4">
+          <img src="${items[i].image}" class="w-14 h-14 rounded-lg object-cover"/>
+          <div>
+            <p class="font-semibold">${items[i].name}</p>
+            <p class="text-xs text-gray-500">
+              ${items[i].servings} serving • ${items[i].type} <br/>
+              ${items[i].time}
+            </p>
+          </div>
+        </div>
 
-function getWeeklyCalories() {
-  const log = getFoodLog();
-
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  return days.map(day => {
-    const mealsOfDay = log.filter(item => item.day === day);
-
-    const calories = mealsOfDay.reduce(
-      (sum, item) => sum + Number(item.calories || 0),
-      0
-    );
-
-    return {
-      day,
-      calories,
-      items: mealsOfDay.length
-    };
-  });
-}
-
-//ui weekly overview
-export function renderWeeklyOverview() {
-  const data = getWeeklyCalories();
-  const container = document.getElementById("weekly-overview");
-
-  container.innerHTML = "";
-
-  for (let day of data) {
-    container.innerHTML += `
-      <div class="text-center px-6 py-3 rounded-xl ${
-        day.calories ? "bg-emerald-50" : "bg-gray-50"
-      }">
-        <p class="text-sm text-gray-500">${day.day}</p>
-
-        <p class="mt-2 font-bold ${
-          day.calories ? "text-emerald-600" : "text-gray-300"
-        }">
-          ${day.calories}
-        </p>
-
-        <p class="text-xs text-gray-400">kcal</p>
-
-        ${
-          day.items
-            ? `<p class="text-xs text-emerald-600">${day.items} meals</p>`
-            : ""
-        }
+        <div class="flex items-center gap-4 text-sm">
+          <span class="font-bold text-emerald-600">${items[i].calories} kcal</span>
+          <span>${items[i].protein}g P</span>
+          <span>${items[i].carbs}g C</span>
+          <span>${items[i].fat}g F</span>
+          <button data-id="${items[i].id}" class="delete-log text-red-500">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
       </div>
     `;
   }
+
+  list.innerHTML = cartona;
+  
 }
 
+let selectedServings = 1;
+
+export function openServingsModal() {
+  selectedServings = 1;
+  document.getElementById("servings-count").textContent = "1";
+
+  const modal = document.getElementById("servings-modal");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+}
+
+export function closeServingsModal() {
+  const modal = document.getElementById("servings-modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+export function getSelectedServings() {
+  return selectedServings;
+}
+
+export function setSelectedServings(value) {
+  selectedServings = value;
+}
+
+  export function fillServingsModal(currentMeal, nutrition){
+    document.getElementById("serving-meal-name").textContent = currentMeal.name;
+      document.getElementById("serving-meal-image").src = currentMeal.thumbnail;
+    
+      document.getElementById("modal-calories").textContent = nutrition.perServing.calories;
+      document.getElementById("modal-protein").textContent  = nutrition.perServing.protein + "g";
+      document.getElementById("modal-carbs").textContent    = nutrition.perServing.carbs + "g";
+      document.getElementById("modal-fat").textContent      = nutrition.perServing.fat + "g";
+    
+
+  }

@@ -16,3 +16,7 @@
 #serving-model{
   display: none;
 }
+.active{
+background-color:oklch(0.979 0.021 166.113);
+color:oklch(0.508 0.118 165.612);
+}
